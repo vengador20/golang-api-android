@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fiberapi/controllers"
-	"fiberapi/cron"
 	"fiberapi/database"
 	"fiberapi/middleware"
 	"fiberapi/routes"
@@ -69,7 +68,7 @@ func main() {
 		return c.JSON("hola")
 	})
 
-	app.Get("/ur", cron.Semana)
+	//app.Get("/ur", cron.Semana)
 
 	// app.Get("/jwt", func(c *fiber.Ctx) error {
 

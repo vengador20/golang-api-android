@@ -3,6 +3,7 @@ package routes
 import (
 	"context"
 	"fiberapi/controllers"
+	"fiberapi/cron"
 	"fiberapi/database"
 	"time"
 
@@ -15,6 +16,8 @@ import (
 func SetupRouter(router fiber.Router) {
 
 	router.Get("/prueba", prueba)
+
+	router.Get("/ur", cron.Semana)
 
 	router.Get("/find", find)
 
@@ -63,16 +66,15 @@ type nivelEducativo struct {
 type clasificacion struct {
 	ID primitive.ObjectID `json:"id" bson:"_id"`
 	//Nombre           string `bson:"nombre,omitempty"`
-	Grupo            string             `bson:"grupo,omitempty"`
+	Grupo            primitive.ObjectID `bson:"idGrupo,omitempty"`
 	IdNivelEducativo primitive.ObjectID `bson:"idNivelEducativo,omitempty"`
-	//xp string `bson:"idNivelEducativo,omitempty"`
+	IdUser           primitive.ObjectID `bson:"idUser,omitempty"`
+	Xp               int                `bson:"xp,omitempty"`
 }
 
-type user_clasificacion struct {
-	ID              primitive.ObjectID `json:"id" bson:"_id"`
-	XpUser          int                `json:"xpUser" bson:"xpUser"`
-	IdClasificacion primitive.ObjectID `json:"idClasificacion" bson:"idClasificacion"`
-	IdUser          primitive.ObjectID `json:"idUser" bson:"idUser"`
+type Grupo struct {
+	ID     primitive.ObjectID `json:"id" bson:"_id"`
+	Nombre string             `bson:"nombre,omitempty"`
 }
 
 func prueba(c *fiber.Ctx) error {
@@ -92,19 +94,26 @@ func prueba(c *fiber.Ctx) error {
 	// collnivel.InsertMany(ctx, bsonNivel)
 
 	//clasificacion
-	// collCla := database.GetCollection(cliente, "clasificacion")
+	collCla := database.GetCollection(cliente, "clasificacion")
 
 	//id primaria
-	// id, _ := primitive.ObjectIDFromHex("63b90053641dc70bbd95087f")
+	id, _ := primitive.ObjectIDFromHex("63b90053641dc70bbd95087f")
+	//id user efrain
+	idUser, _ := primitive.ObjectIDFromHex("63b9bc4dbf4a6d0293896cb8")
+	//grupos
+	idUnoA, _ := primitive.ObjectIDFromHex("63bb39a02ff9dcd3b4f5eef1")
+	// idUnoB, _ := primitive.ObjectIDFromHex("63bb39a02ff9dcd3b4f5eef2")
+	// idUnoC, _ := primitive.ObjectIDFromHex("63bb39a02ff9dcd3b4f5eef3")
 
-	// bsonClas := []interface{}{
-	// 	clasificacion{Grupo: "1a", IdNivelEducativo: id},
-	// 	clasificacion{Grupo: "1b", IdNivelEducativo: id},
-	// 	clasificacion{Grupo: "1c", IdNivelEducativo: id},
-	// }
+	bsonClas := []interface{}{
+		clasificacion{ID: primitive.NewObjectID(), Grupo: idUnoA, IdNivelEducativo: id, IdUser: idUser, Xp: 10},
+		// clasificacion{ID: primitive.NewObjectID(), Grupo: "1b", IdNivelEducativo: id},
+		// clasificacion{ID: primitive.NewObjectID(), Grupo: "1c", IdNivelEducativo: id},
+	}
 
-	// collCla.InsertMany(ctx, bsonClas)
+	collCla.InsertMany(ctx, bsonClas)
 
+	//users
 	// collUser := database.GetCollection(cliente, "users")
 
 	// //id primaria
@@ -115,15 +124,26 @@ func prueba(c *fiber.Ctx) error {
 
 	// collUser.InsertOne(ctx, bsonUser)
 
-	collUser := database.GetCollection(cliente, "user_clasificacion")
+	// collUser := database.GetCollection(cliente, "user_clasificacion")
 
-	//id user efrain gustavo
-	idUserEfrain, _ := primitive.ObjectIDFromHex("63b9bc4dbf4a6d0293896cb8")
-	idClasUnoA, _ := primitive.ObjectIDFromHex("63b9ba8b07e671d46f1bb32a") //1a
+	// //id user efrain gustavo
+	// idUserEfrain, _ := primitive.ObjectIDFromHex("63b9bc4dbf4a6d0293896cb8")
+	// idClasUnoA, _ := primitive.ObjectIDFromHex("63b9ba8b07e671d46f1bb32a") //1a
 
-	bsonUser := user_clasificacion{ID: primitive.NewObjectID(), XpUser: 10, IdUser: idUserEfrain, IdClasificacion: idClasUnoA}
+	// bsonUser := user_clasificacion{ID: primitive.NewObjectID(), XpUser: 10, IdUser: idUserEfrain, IdClasificacion: idClasUnoA}
 
-	collUser.InsertOne(ctx, bsonUser)
+	// collUser.InsertOne(ctx, bsonUser)
+
+	//grupo
+	// collG := database.GetCollection(cliente, "grupo")
+
+	// bsonG := []interface{}{
+	// 	Grupo{ID: primitive.NewObjectID(), Nombre: "1a"},
+	// 	Grupo{ID: primitive.NewObjectID(), Nombre: "1b"},
+	// 	Grupo{ID: primitive.NewObjectID(), Nombre: "1c"},
+	// }
+
+	// collG.InsertMany(ctx, bsonG)
 
 	return c.JSON("exito")
 }
