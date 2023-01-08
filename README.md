@@ -5,7 +5,6 @@
 ## Lenguaje de programación:
 
     - Golang
-    - Javascript
 
 ## FrameWork o librerías:
 
@@ -16,11 +15,3 @@
     - Mongo driver (Base de datos)
     - Validator (go-playground/validator)
     - Validator Translate (go-playground/universal-translator)
-  
-### FrontEnd:
-
-    - React (Componentes)
-    - React Router (Manejo de Ruta)
-
-## Arquetecturas:
-    - Hexagonal
