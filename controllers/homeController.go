@@ -25,9 +25,9 @@ type Users struct {
 	Nombres   string `json:"nombres" validate:"required,min=3,max=32" bson:"nombres"`
 	Email     string `json:"email" validate:"required,email" bson:"email"`
 	Apellidos string `json:"apellidos" validate:"required" bson:"apellidos"`
-	Xp        int    `json:"xp,omitempty" bson:"xp"`
+	//Xp        int    `json:"xp,omitempty" bson:"xp"`
 	//Password       string             `json:"password" validate:"required,min=8" bson:"password"`
-	NivelEducativo string `json:"nivelEducativo,omempty" bson:"nivelEducativo"`
+	//NivelEducativo string `json:"nivelEducativo,omempty" bson:"nivelEducativo"`
 }
 
 func Home(c *fiber.Ctx) error {

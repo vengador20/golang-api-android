@@ -75,6 +75,19 @@ func VerifyJwt(tokenHeader string) (bool, error) {
 	return true, nil
 }
 
+func ExtractClaims(tokenHeader string) jwt.MapClaims {
+
+	token, _,err := new(jwt.Parser).ParseUnverified(tokenHeader,jwt.MapClaims{}) 
+
+	if err != nil {
+		return nil
+	}
+
+	claims := token.Claims.(jwt.MapClaims)
+
+	return claims
+}
+
 func RandomString(length int) string {
 	b := make([]byte, length)
 	rand.Read(b)

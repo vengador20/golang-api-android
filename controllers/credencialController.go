@@ -130,11 +130,19 @@ func Register(c *fiber.Ctx) error {
 
 	coll := database.GetCollection(cliente, database.TABLE_USERS)
 
-	bsonUser := bson.D{
-		primitive.E{Key: "nombres", Value: user.Nombres},
-		{Key: "apellidos", Value: user.Apellidos}, {Key: "email", Value: user.Email},
-		{Key: "password", Value: password},
+	bsonUser := validations.UserRegister{
+		ID:        primitive.NewObjectID(),
+		Nombres:   user.Nombres,
+		Apellidos: user.Apellidos,
+		Email:     user.Email,
+		Password:  string(password),
 	}
+
+	// bson.D{
+	// 	primitive.E{Key: "nombres", Value: user.Nombres},
+	// 	{Key: "apellidos", Value: user.Apellidos}, {Key: "email", Value: user.Email},
+	// 	{Key: "password", Value: password},
+	// }
 
 	_, err = coll.InsertOne(ctx, bsonUser)
 
@@ -180,9 +188,9 @@ func ActualizarNivelEducativo(c *fiber.Ctx) error {
 
 	coll := cliente.Database("uguia").Collection(database.TABLE_USERS)
 
-	filter := bson.D{{"email", user.Email}}
+	filter := bson.M{"email": user.Email}
 
-	update := bson.D{{"$set", bson.D{{"nivelEducativo", user.NivelEducativo}}}}
+	update := bson.M{"$set": bson.M{"nivelEducativo": user.IdNivelEducativo}}
 
 	coll.UpdateOne(ctx, filter, update)
 

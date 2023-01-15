@@ -15,12 +15,12 @@ type User struct {
 }
 
 type UserRegister struct {
-	ID             primitive.ObjectID `json:"id" bson:"_id"`
-	Nombres        string             `json:"nombres" validate:"required,min=3,max=32" bson:"nombres"`
-	Email          string             `json:"email" validate:"required,email" bson:"email"`
-	Apellidos      string             `json:"apellidos" validate:"required" bson:"apellidos"`
-	Password       string             `json:"password" validate:"required,min=8" bson:"password"`
-	NivelEducativo string             `json:"nivelEducativo,omempty" bson:"nivelEducativo"`
+	ID               primitive.ObjectID `json:"id" bson:"_id"`
+	Nombres          string             `json:"nombres" validate:"required,min=3,max=32" bson:"nombres"`
+	Email            string             `json:"email" validate:"required,email" bson:"email"`
+	Apellidos        string             `json:"apellidos" validate:"required" bson:"apellidos"`
+	Password         string             `json:"password" validate:"required,min=8" bson:"password"`
+	IdNivelEducativo primitive.ObjectID `json:"idNivelEducativo" bson:"idNivelEducativo"`
 }
 
 type ErrorResponse struct {

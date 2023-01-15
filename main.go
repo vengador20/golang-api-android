@@ -6,6 +6,7 @@ import (
 	"fiberapi/database"
 	"fiberapi/middleware"
 	"fiberapi/routes"
+	"log"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -13,10 +14,74 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/etag"
 	"github.com/gofiber/fiber/v2/middleware/recover"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.uber.org/fx"
 )
 
 func main() {
+	app := fx.New(
+		fx.Provide(
+			fiber.New,
+			context.Background,
+			database.DbConnect,
+		),
+		fx.Invoke(
+			NewHTTPServer,
+		),
+	)
 
+	app.Run()
+}
+
+type Users struct {
+	//ID        primitive.ObjectID `json:"id" bson:"_id"`
+	Nombres   string `json:"nombres" validate:"required,min=3,max=32" bson:"nombres"`
+	Email     string `json:"email" validate:"required,email" bson:"email"`
+	Apellidos string `json:"apellidos" validate:"required" bson:"apellidos"`
+	//Xp        int    `json:"xp,omitempty" bson:"xp"`
+	//Password       string             `json:"password" validate:"required,min=8" bson:"password"`
+	//NivelEducativo string `json:"nivelEducativo,omempty" bson:"nivelEducativo"`
+}
+
+func NewHTTPServer(lc fx.Lifecycle, app *fiber.App, client *mongo.Client) {
+	lc.Append(
+		fx.Hook{
+			OnStart: func(ctx context.Context) error {
+				
+				app.Get("/", func(c *fiber.Ctx) error {
+					return c.JSON("hola")
+				})
+
+				app.Get("/users", func(c *fiber.Ctx) error {
+
+					coll := database.GetCollection(client, "users")
+
+					cursor, err := coll.Find(ctx, bson.D{})
+
+					if err != nil {
+						log.Fatal(err)
+					}
+					var results []Users
+
+					if err := cursor.All(ctx, &results); err != nil {
+						panic(err)
+					}
+					return c.JSON(&results)
+				})
+
+				app.Listen(":8080")
+				return nil
+			},
+			OnStop: func(ctx context.Context) error {
+				client.Disconnect(ctx)
+				return nil
+			},
+		},
+	)
+}
+
+func em() {
 	app := fiber.New()
 
 	// cron := cron.New()
@@ -64,9 +129,11 @@ func main() {
 	app.Post("/login", controllers.Login)
 	//app.Get("/us", controllers.Home)
 	app.Get("/hola", func(c *fiber.Ctx) error {
-
+		//err := config.RandomString(25)
 		return c.JSON("hola")
 	})
+
+	app.Get("/users", controllers.Home)
 
 	//app.Get("/ur", cron.Semana)
 

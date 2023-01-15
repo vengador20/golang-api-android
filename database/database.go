@@ -10,10 +10,21 @@ import (
 )
 
 var (
-	DB          *mongo.Client = DbConnect()
-	DBNAME      string        = "uguia"
-	TABLE_USERS string        = "users"
+	DB                   *mongo.Client = DbConnect()
+	DBNAME               string        = "uguia"
+	TABLE_USERS          string        = "users"
+	TABLE_NIVELEDUCATIVO string        = "nivelEducativo"
+	TABLE_CLASIFICACION  string        = "clasificacion"
+	TABLE_GRUPO          string        = "grupo"
 )
+
+type Database interface {
+	GetCollection(collection string) *mongo.Collection
+}
+
+type DBCon struct {
+	Client *mongo.Client
+}
 
 func connect(channel <-chan string) *mongo.Client {
 
@@ -42,6 +53,11 @@ func DbConnect() *mongo.Client {
 
 func GetCollection(cliente *mongo.Client, collection string) *mongo.Collection {
 	coll := cliente.Database(DBNAME).Collection(collection)
+	return coll
+}
+
+func (d *DBCon) GetCollection(collection string) *mongo.Collection {
+	coll := d.Client.Database(DBNAME).Collection(collection)
 	return coll
 }
 
