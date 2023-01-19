@@ -1,27 +1,13 @@
 package validations
 
 import (
+	"fiberapi/database/models"
 	"fmt"
 	"strings"
 
 	ut "github.com/go-playground/universal-translator"
 	"github.com/go-playground/validator/v10"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
-
-type User struct {
-	Email    string `json:"email" validate:"required,email" bson:"email"`
-	Password string `json:"password" validate:"required,min=8" bson:"password"`
-}
-
-type UserRegister struct {
-	ID               primitive.ObjectID `json:"id" bson:"_id"`
-	Nombres          string             `json:"nombres" validate:"required,min=3,max=32" bson:"nombres"`
-	Email            string             `json:"email" validate:"required,email" bson:"email"`
-	Apellidos        string             `json:"apellidos" validate:"required" bson:"apellidos"`
-	Password         string             `json:"password" validate:"required,min=8" bson:"password"`
-	IdNivelEducativo primitive.ObjectID `json:"idNivelEducativo" bson:"idNivelEducativo"`
-}
 
 type ErrorResponse struct {
 	FailedField string
@@ -34,7 +20,7 @@ var (
 )
 
 type UserCredencial interface {
-	User | UserRegister
+	models.User | models.UserRegister
 }
 
 func replaceString(str string) string {

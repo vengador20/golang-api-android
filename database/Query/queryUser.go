@@ -2,40 +2,67 @@ package query
 
 import (
 	"context"
-	"fiberapi/database"
+	"encoding/json"
+	"fiberapi/config/cache"
+	"fiberapi/database/models"
+	"fiberapi/database/mongo"
+	"fmt"
 
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
+)
+
+var (
+	user = "users"
+	//users []models.UserAll
 )
 
 type UserQuery interface {
 	QueryUserFind(filter bson.D) []bson.M
+	UserAll() models.UserAll
 }
 
-type Query struct {
-	Ctx    context.Context
-	Client *mongo.Client
+type QueryUser struct {
+	Ctx context.Context
 }
 
-//var cliente *mongo.Client = database.DB
+func (u *QueryUser) UserAll() ([]models.UserAll, error) {
 
-func (u *Query) QueryUserFind(filter bson.D) []bson.M {
-	var db database.Database = &database.DBCon{Client: u.Client}
+	var users []models.UserAll
 
-	coll := db.GetCollection(database.TABLE_USERS) //database.GetCollection(cliente, database.TABLE_USERS) //db.GetCollection(cliente, database.TABLE_USERS)
-
-	cursor, err := coll.Find(u.Ctx, filter)
-
-	if err != nil {
-		println("erro")
-		panic(err)
+	cache := cache.Cache{
+		Ctx: u.Ctx,
 	}
 
-	var user []bson.M
+	res, err := cache.GetCache(user)
 
-	cursor.All(u.Ctx, &user)
+	//ya existe en cache
+	if err == nil {
+		//fmt.Println("cache")
+		json.Unmarshal([]byte(res), &users)
+
+		return users, err
+	}
+	//fmt.Println("no esta en cache")
+
+	db := mongo.GetInstance()
+
+	coll := db.GetCollection(user)
+
+	cursor, err := coll.Find(u.Ctx, bson.D{})
+
+	if err != nil {
+		return users, fmt.Errorf("error: %v", err)
+	}
+
+	err = cursor.All(u.Ctx, &users)
+
+	if err != nil {
+		return users, fmt.Errorf("error: %v", err)
+	}
 
 	defer cursor.Close(u.Ctx)
 
-	return user
+	cache.SaveCache(user, users)
+
+	return users, nil
 }

@@ -2,8 +2,8 @@ package controllers
 
 import (
 	"context"
-	"fiberapi/database"
-	"fiberapi/validations"
+	"fiberapi/database/models"
+	mong "fiberapi/database/mongo"
 	"log"
 	"time"
 
@@ -18,17 +18,7 @@ type MessageStruct struct {
 	Status  uint
 }
 
-var cliente *mongo.Client = database.DB
-
-type Users struct {
-	//ID        primitive.ObjectID `json:"id" bson:"_id"`
-	Nombres   string `json:"nombres" validate:"required,min=3,max=32" bson:"nombres"`
-	Email     string `json:"email" validate:"required,email" bson:"email"`
-	Apellidos string `json:"apellidos" validate:"required" bson:"apellidos"`
-	//Xp        int    `json:"xp,omitempty" bson:"xp"`
-	//Password       string             `json:"password" validate:"required,min=8" bson:"password"`
-	//NivelEducativo string `json:"nivelEducativo,omempty" bson:"nivelEducativo"`
-}
+var cliente *mongo.Client = mong.GetInstance().Client
 
 func Home(c *fiber.Ctx) error {
 	//importamos el modelo user y ponemos type para que sea de tipo users
@@ -40,14 +30,14 @@ func Home(c *fiber.Ctx) error {
 	//desconectar de la base de datos
 	//defer database.DisconnectDatabase(ctx,cliente)
 
-	coll := database.GetCollection(cliente, "users")
+	coll := mong.GetCollection(cliente, "users")
 
 	cursor, err := coll.Find(ctx, bson.D{})
 
 	if err != nil {
 		log.Fatal(err)
 	}
-	var results []Users
+	var results []models.UserAll
 
 	if err := cursor.All(ctx, &results); err != nil {
 		panic(err)
@@ -69,7 +59,7 @@ func GetUserId(c *fiber.Ctx) error {
 
 	id := c.Params("id")
 	//importamos el modelo user y ponemos type para que sea de tipo users
-	var Users validations.User
+	var Users models.User
 
 	ctx, canel := context.WithTimeout(context.Background(), 10*time.Second)
 
@@ -78,7 +68,7 @@ func GetUserId(c *fiber.Ctx) error {
 	//desconectar de la base de datos
 	//defer database.DisconnectDatabase(ctx,cliente)
 
-	coll := database.GetCollection(cliente, "users")
+	coll := mong.GetCollection(cliente, "users")
 
 	objId, _ := primitive.ObjectIDFromHex(id)
 
@@ -98,7 +88,7 @@ type UserXp struct {
 
 func AumentarXp(c *fiber.Ctx) error {
 
-	var user = new(Users)
+	var user = new(models.UserAll)
 
 	err := c.BodyParser(user)
 	if err != nil {

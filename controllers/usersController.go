@@ -3,7 +3,7 @@ package controllers
 import (
 	"context"
 	"fiberapi/config"
-	"fiberapi/database"
+	mong "fiberapi/database/mongo"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -54,7 +54,7 @@ func NewPassword(c *fiber.Ctx) error {
 
 	claims := config.ExtractClaims(head.Name)
 
-	collUser := database.GetCollection(cliente, database.TABLE_USERS)
+	collUser := mong.GetCollection(cliente, mong.TABLE_USERS)
 
 	filterUser := bson.M{"email": claims["userEmail"]}
 
@@ -73,7 +73,7 @@ func NewPassword(c *fiber.Ctx) error {
 		panic(err)
 	}
 
-	coll := database.GetCollection(cliente, database.TABLE_USERS)
+	coll := mong.GetCollection(cliente, mong.TABLE_USERS)
 
 	filter := bson.M{"email": claims["userEmail"]}
 

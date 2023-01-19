@@ -3,7 +3,8 @@ package cron
 import (
 	"context"
 	"fiberapi/config"
-	"fiberapi/database"
+	"fiberapi/database/models"
+	mong "fiberapi/database/mongo"
 	"fmt"
 	"strings"
 	"time"
@@ -14,115 +15,11 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-var client *mongo.Client = database.DB
-
-type nivelEducativo struct {
-	ID     primitive.ObjectID `json:"id" bson:"_id"`
-	Nombre string             `bson:"nombre,omitempty"`
-	//IdNivelEducativo primitive.ObjectID `json:"idNivelEducativo" bson:"idNivelEducativo"`
-}
-
-type users struct {
-	ID               primitive.ObjectID `json:"id" bson:"_id"`
-	Nombres          string             `json:"nombres" bson:"nombres,omitempty"`
-	Apellidos        string             `json:"apellidos" bson:"apellidos,omitempty"`
-	IdNivelEducativo primitive.ObjectID `json:"idNivelEducativo" bson:"idNivelEducativo,omitempty"`
-}
-
-type clasificacion struct {
-	ID primitive.ObjectID `json:"id" bson:"_id"`
-	//Nombre           string `bson:"nombre,omitempty"`
-	Grupo            primitive.ObjectID/*[]Grupo */ `json:"idGrupo" bson:"idGrupo,omitempty"`
-	IdNivelEducativo primitive.ObjectID/*[]nivelEducativo*/ `json:"idNivelEducativo" bson:"idNivelEducativo,omitempty"`
-	IdUser           primitive.ObjectID/*[]users*/ `json:"idUser" bson:"idUser,omitempty"`
-	Xp               int `json:"xp" bson:"xp,omitempty"`
-}
-
-type Grupo struct {
-	ID     primitive.ObjectID `json:"id" bson:"_id"`
-	Nombre string             `json:"nombre" bson:"nombre,omitempty"`
-}
+var client *mongo.Client = mong.GetInstance().Client
 
 type Header struct {
 	Email string `json:"email" bson:"email,omitempty"`
 	Name  string `json:"name" bson:"name,omitempty"`
-}
-
-func Clas(c *fiber.Ctx) error {
-	head := new(Header)
-
-	if err := c.ReqHeaderParser(head); err != nil {
-		return err
-	}
-
-	claims := config.ExtractClaims(head.Name)
-
-	fmt.Printf("claims: %v\n", claims)
-	emailToken := fmt.Sprint(claims["userEmail"])
-
-	fmt.Printf("em: %v\n", emailToken)
-
-	//var wg sync.WaitGroup
-	//var ch = make(chan int)
-	var chUser = make(chan primitive.ObjectID)
-
-	var clasificacionUser clasificacion
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-
-	defer cancel()
-
-	go func() {
-		var user users
-		coll := database.GetCollection(client, database.TABLE_USERS)
-
-		bson := bson.M{"email": emailToken}
-
-		coll.FindOne(ctx, bson).Decode(&user)
-
-		chUser <- user.IdNivelEducativo
-	}()
-
-	coll := database.GetCollection(client, database.TABLE_CLASIFICACION)
-
-	filter := bson.M{"idNivelEducativo": <-chUser}
-
-	coll.FindOne(ctx, filter).Decode(&clasificacionUser)
-
-	fmt.Printf("clasificacionUser: %v\n", clasificacionUser)
-
-	collClas := database.GetCollection(client, database.TABLE_CLASIFICACION)
-
-	filterUs := bson.D{{Key: "$match", Value: bson.D{{Key: "idGrupo", Value: clasificacionUser.Grupo}}}}
-
-	lookNivel := bson.D{{Key: "$lookup", Value: bson.M{
-		"from":         "nivelEducativo",
-		"localField":   "idNivelEducativo",
-		"foreignField": "_id",
-		"as":           "idNivelEducativo",
-	}}}
-
-	lookUser := bson.D{{Key: "$lookup", Value: bson.M{
-		"from":         "users",
-		"localField":   "idUser",
-		"foreignField": "_id",
-		"as":           "idUser",
-	}}}
-
-	cursor, err := collClas.Aggregate(ctx, mongo.Pipeline{filterUs, lookNivel, lookUser})
-
-	if err != nil {
-		panic(err)
-	}
-
-	var showsLoadedClas []bson.M
-
-	if err := cursor.All(ctx, &showsLoadedClas); err != nil {
-		panic(err)
-	}
-
-	return c.JSON(showsLoadedClas)
-
 }
 
 func Semana(c *fiber.Ctx) error {
@@ -149,8 +46,8 @@ func Semana(c *fiber.Ctx) error {
 	defer cancel()
 
 	go func() {
-		var user users
-		coll := database.GetCollection(client, database.TABLE_USERS)
+		var user models.UserAll
+		coll := mong.GetCollection(client, mong.TABLE_USERS)
 
 		bson := bson.M{"email": emailToken}
 
@@ -159,24 +56,7 @@ func Semana(c *fiber.Ctx) error {
 		chUser <- user.IdNivelEducativo
 	}()
 
-	// coll := database.GetCollection(client, database.TABLE_USERS)
-
-	// lookup := bson.D{{"$lookup", bson.D{{"from", "nivelEducativo"},
-	// 	{"localField", "idNivelEducativo"}, {"foreignField", "_id"}, {"as", "idNivelEducativo"}}}}
-
-	// cursor, err := coll.Aggregate(ctx, lookup)
-
-	// if err != nil {
-	// 	panic(err)
-	// }
-
-	// var showsLoaded []bson.M
-
-	// if err = cursor.All(ctx, &showsLoaded); err != nil {
-	// 	panic(err)
-	// }
-
-	collClas := database.GetCollection(client, "clasificacion")
+	collClas := mong.GetCollection(client, "Clasificacion")
 
 	lookupClas := bson.D{{Key: "$lookup", Value: bson.M{
 		"from":         "grupo",
@@ -235,17 +115,17 @@ func Semana(c *fiber.Ctx) error {
 
 	//defer wg.Wait()
 
-	return c.JSON(fiber.Map{"clasificacion": showsLoadedClas, "count": <-ch})
+	return c.JSON(fiber.Map{"models.Clasificacion{": showsLoadedClas, "count": <-ch})
 }
 
 func Sem(c *fiber.Ctx) error {
 
-	var nivelEducativo []nivelEducativo
+	var nivelEducativo []models.NivelEducativo
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 
 	defer cancel()
 
-	coll := database.GetCollection(client, database.TABLE_NIVELEDUCATIVO)
+	coll := mong.GetCollection(client, mong.TABLE_NIVELEDUCATIVO)
 
 	cursor, err := coll.Find(ctx, bson.D{})
 
@@ -271,7 +151,7 @@ func cronClasificacion(id primitive.ObjectID) {
 
 	filter := bson.D{{Key: "idNivelEducativo", Value: id}}
 
-	coll := database.GetCollection(client, database.TABLE_USERS)
+	coll := mong.GetCollection(client, mong.TABLE_USERS)
 
 	countUsers, err := coll.CountDocuments(ctx, filter)
 
@@ -279,7 +159,7 @@ func cronClasificacion(id primitive.ObjectID) {
 		panic(err)
 	}
 
-	collUsers := database.GetCollection(client, database.TABLE_USERS)
+	collUsers := mong.GetCollection(client, mong.TABLE_USERS)
 
 	cursorUsers, err := collUsers.Find(ctx, filter)
 
@@ -287,7 +167,7 @@ func cronClasificacion(id primitive.ObjectID) {
 		panic(err)
 	}
 
-	var users, agregarUsers []users
+	var users, agregarUsers []models.UserAll
 
 	if err := cursorUsers.All(ctx, &users); err != nil {
 		panic(err)
@@ -332,14 +212,14 @@ func cronClasificacion(id primitive.ObjectID) {
 	}
 }
 
-func gruposAdd(user []users, grupo string) {
+func gruposAdd(user []models.UserAll, grupo string) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
 
-	collGrup := database.GetCollection(client, database.TABLE_GRUPO)
+	collGrup := mong.GetCollection(client, mong.TABLE_GRUPO)
 
 	id := primitive.NewObjectID()
-	bson := Grupo{
+	bson := models.Grupo{
 		ID:     id,
 		Nombre: grupo,
 	}
@@ -349,7 +229,7 @@ func gruposAdd(user []users, grupo string) {
 	data := make([]interface{}, len(user))
 
 	for i := range user {
-		data[i] = clasificacion{
+		data[i] = models.Clasificacion{
 			ID:               primitive.NewObjectID(),
 			Grupo:            id,
 			IdUser:           user[i].ID,
@@ -358,7 +238,7 @@ func gruposAdd(user []users, grupo string) {
 		}
 	}
 
-	collClas := database.GetCollection(client, database.TABLE_CLASIFICACION)
+	collClas := mong.GetCollection(client, mong.TABLE_CLASIFICACION)
 
 	collClas.InsertMany(ctx, data)
 

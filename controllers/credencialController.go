@@ -3,7 +3,8 @@ package controllers
 import (
 	"context"
 	"fiberapi/config"
-	"fiberapi/database"
+	"fiberapi/database/models"
+	mong "fiberapi/database/mongo"
 	"fiberapi/validations"
 	"time"
 
@@ -30,7 +31,7 @@ type Respuesta struct {
 
 func Login(c *fiber.Ctx) error {
 
-	user := new(validations.User)
+	user := new(models.User)
 
 	esTrans := es.New()
 
@@ -66,9 +67,9 @@ func Login(c *fiber.Ctx) error {
 		return c.JSON(err)
 	}
 
-	var results validations.User
+	var results models.User
 
-	coll := database.GetCollection(cliente, database.TABLE_USERS)
+	coll := mong.GetCollection(cliente, mong.TABLE_USERS)
 
 	coll.FindOne(ctx, bson.M{"email": user.Email}).Decode(&results)
 
@@ -90,7 +91,7 @@ func Login(c *fiber.Ctx) error {
 
 func Register(c *fiber.Ctx) error {
 
-	user := new(validations.UserRegister)
+	user := new(models.UserRegister)
 
 	esTrans := es.New()
 
@@ -128,9 +129,9 @@ func Register(c *fiber.Ctx) error {
 		return c.JSON(Respuesta{Message: "Error al Generar la contraseña"})
 	}
 
-	coll := database.GetCollection(cliente, database.TABLE_USERS)
+	coll := mong.GetCollection(cliente, mong.TABLE_USERS)
 
-	bsonUser := validations.UserRegister{
+	bsonUser := models.UserRegister{
 		ID:        primitive.NewObjectID(),
 		Nombres:   user.Nombres,
 		Apellidos: user.Apellidos,
@@ -175,7 +176,7 @@ func Logout(c *fiber.Ctx) error {
 }
 
 func ActualizarNivelEducativo(c *fiber.Ctx) error {
-	user := new(validations.UserRegister)
+	user := new(models.UserRegister)
 
 	err := c.BodyParser(user)
 	if err != nil {
@@ -186,7 +187,7 @@ func ActualizarNivelEducativo(c *fiber.Ctx) error {
 
 	defer canel()
 
-	coll := cliente.Database("uguia").Collection(database.TABLE_USERS)
+	coll := cliente.Database("uguia").Collection(mong.TABLE_USERS)
 
 	filter := bson.M{"email": user.Email}
 
