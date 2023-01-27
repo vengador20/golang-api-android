@@ -1,0 +1,21 @@
+//definir interface con tipo de dato
+type Emfe[T any] interface {
+	//func ejemplo[T int]() T
+	SumFloats() T
+}
+
+func (s QueryUser) SumFloats() string {
+	fmt.Println("hola esto es interface")
+	return ""
+}
+
+
+func example() {
+	db := query.QueryUser{}
+
+	//query.UserQuery{&db}
+	LSS(db)
+}
+func LSS(s query.Emfe[string]) {
+	s.SumFloats()
+}

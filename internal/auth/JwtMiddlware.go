@@ -1,7 +1,7 @@
-package middleware
+package auth
 
 import (
-	"fiberapi/config"
+	"fiberapi/internal/infraestructure/config"
 
 	"github.com/gofiber/fiber/v2"
 )

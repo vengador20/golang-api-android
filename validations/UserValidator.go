@@ -2,6 +2,7 @@ package validations
 
 import (
 	"fiberapi/database/models"
+	"fiberapi/internal/users/domain"
 	"fmt"
 	"strings"
 
@@ -79,4 +80,23 @@ func ValidatorStruct[T UserCredencial](user T, trans ut.Translator) ([]string, e
 	}
 	return message, nil //validator.ValidationErrorsTranslations{},nil
 	//return errors
+}
+
+func ValidatorStructNewPassword(user domain.BodyNewPassword, trans ut.Translator) ([]string, error) {
+	err := Validate.Struct(user)
+
+	var message []string
+
+	if err != nil {
+
+		errs := err.(validator.ValidationErrors)
+
+		for _, v := range errs.Translate(trans) {
+			replaceString(v)
+			message = append(message, replaceString(v))
+		}
+
+		return message, fmt.Errorf("")
+	}
+	return message, nil
 }

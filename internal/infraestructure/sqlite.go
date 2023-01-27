@@ -1,4 +1,4 @@
-package sqlite
+package infraestructure
 
 import (
 	"context"
@@ -20,9 +20,9 @@ const create string = `
 
 // const file string = "activities.db"
 var (
-	one     sync.Once
-	wg      sync.Mutex
-	connect *Sqlite
+	one           sync.Once
+	wg            sync.Mutex
+	connectSqlite *Sqlite
 )
 
 type Sqlite struct {
@@ -49,12 +49,12 @@ func Open() *Sqlite {
 		if error != nil {
 			panic("")
 		}
-		connect = &Sqlite{
+		connectSqlite = &Sqlite{
 			Db: db,
 		}
 	})
 
-	return connect //&Sqlite{Db: db}
+	return connectSqlite //&Sqlite{Db: db}
 }
 
 func (s *Sqlite) Insert(nombre string, datos interface{}) {

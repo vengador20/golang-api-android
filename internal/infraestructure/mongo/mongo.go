@@ -1,8 +1,8 @@
-package mongo
+package mongodb
 
 import (
 	"context"
-	"fiberapi/config"
+	"fiberapi/internal/infraestructure/config"
 	"sync"
 	"time"
 
@@ -11,8 +11,8 @@ import (
 )
 
 var (
-	conn *Connection
-	one  sync.Once
+	conn     *Connection
+	oneMongo sync.Once
 	//DB                   *mongo.Client = DbConnect()
 	DBNAME               string = "uguia"
 	TABLE_USERS          string = "users"
@@ -31,7 +31,17 @@ type Connection struct {
 
 // patron singleton
 func GetInstance() *Connection {
-	one.Do(func() {
+	oneMongo.Do(func() {
+		conn = &Connection{
+			Client: DbConnect(),
+		}
+	})
+
+	return conn
+}
+
+func (c *Connection) GetInstance() *Connection {
+	oneMongo.Do(func() {
 		conn = &Connection{
 			Client: DbConnect(),
 		}

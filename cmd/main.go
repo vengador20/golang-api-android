@@ -1,105 +1,26 @@
 package main
 
 import (
-	"context"
-	"fiberapi/controllers"
-	query "fiberapi/database/Query"
-	"fiberapi/database/mongo"
-	"fiberapi/middleware"
-	"fiberapi/routes"
-	"time"
+	"fiberapi/internal/infraestructure"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/compress"
-	"github.com/gofiber/fiber/v2/middleware/cors"
-	"github.com/gofiber/fiber/v2/middleware/etag"
-	"github.com/gofiber/fiber/v2/middleware/recover"
 	"go.uber.org/fx"
 )
 
 func main() {
 	app := fx.New(
 		fx.Provide(
-			ctxWithTimeout,
+			infraestructure.CtxWithTimeout,
 			fiber.New,
-			//database.DbConnect,
-			mongo.GetInstance,
-			//sqlite.Open,
+			infraestructure.Db,
 		),
 		fx.Invoke(
-			appMiddleware,
-			NewHTTPServer,
-			routes.New,
+			infraestructure.AppMiddleware,
+			infraestructure.NewHTTPServer,
 		),
 	)
 
 	app.Run()
-}
-
-func ctxWithTimeout() (context.Context, context.CancelFunc) {
-	return context.WithTimeout(context.Background(), 10*time.Second)
-}
-
-func NewHTTPServer(lc fx.Lifecycle, app *fiber.App, conn *mongo.Connection, cancel context.CancelFunc) {
-	lc.Append(
-		fx.Hook{
-			OnStart: func(ctx context.Context) error {
-
-				app.Post("/login", controllers.Login)
-				app.Post("/register", controllers.Register)
-
-				app.Get("/ejemplo", func(c *fiber.Ctx) error {
-					ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-					defer cancel()
-
-					db := query.QueryUser{
-						Ctx: ctx,
-					}
-
-					res, err := db.UserAll()
-
-					if err != nil {
-						return c.SendStatus(400)
-					}
-
-					return c.JSON(res)
-				})
-
-				go app.Listen(":8080")
-				return nil
-			},
-			OnStop: func(ctx context.Context) error {
-				conn.DisconnectDatabase(ctx)
-				cancel()
-				return nil
-			},
-		},
-	)
-}
-
-func appMiddleware(app *fiber.App) {
-	//cors
-	app.Use(cors.New(cors.Config{
-		//AllowOrigins: "http://localhost:5500",
-		AllowCredentials: true,
-	}))
-
-	//recover middleware para evitar se que se termine el programa por panic
-	app.Use(recover.New())
-
-	//compresion
-	app.Use(compress.New(compress.Config{Level: compress.LevelBestSpeed}))
-
-	/*
-	* permite que los cachés sean más eficientes
-	* y ahorren ancho de banda, ya que un servidor
-	* web no necesita volver a enviar una respuesta
-	* completa si el contenido no ha cambiado
-	 */
-	app.Use(etag.New(etag.Config{Weak: true}))
-
-	//middleware custom valid head jwt
-	app.Use("/api", middleware.JWTUser)
 }
 
 // func em() {
